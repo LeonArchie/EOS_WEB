@@ -61,7 +61,7 @@ if [ -f "$DEFAULT_CONF" ] || [ -L "$DEFAULT_CONF" ]; then
 fi
 
 # Создаем директорию для сайта
-SITE_DIR="/var/www/$DOMAIN_NAME/html"
+SITE_DIR="/var/www/$DOMAIN_NAME"
 echo "Создаем директорию для сайта: $SITE_DIR"
 sudo mkdir -p "$SITE_DIR"
 
