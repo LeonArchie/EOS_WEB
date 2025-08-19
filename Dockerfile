@@ -14,16 +14,16 @@ FROM nginx:1.23-alpine
 RUN apk add --no-cache --virtual .build-deps \
     curl \
     && apk add --no-cache \
-    php7-fpm \
-    php7-json \
-    php7-mbstring \
-    php7-session \
-    php7-pdo \
-    php7-pdo_mysql \
-    php7-tokenizer \
-    php7-xml \
-    php7-dom \
-    php7-curl \
+    php8-fpm \
+    php8-json \
+    php8-mbstring \
+    php8-session \
+    php8-pdo \
+    php8-pdo_mysql \
+    php8-tokenizer \
+    php8-xml \
+    php8-dom \
+    php8-curl \
     supervisor \
     iputils \
     net-tools \
