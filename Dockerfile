@@ -10,16 +10,19 @@ RUN apk add --no-cache \
     supervisor \
     curl
 
-# Создание директорий
+# Создание директорий с правильными правами
 RUN mkdir -p \
     /var/www/html \
     /var/log/supervisor \
     /var/run/php \
-    /var/run/supervisor
+    /tmp && \
+    chown -R nginx:nginx /var/www/html /var/log/supervisor /tmp && \
+    chmod -R 755 /var/www/html && \
+    chmod 777 /tmp
 
 # Копирование конфигураций
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/app-config.school59-ekb.ru.conf /etc/nginx/conf.d/default.conf
+COPY nginx/app-config.school59-ekb.ru.conf.conf /etc/nginx/conf.d/default.conf
 
 # Копирование конфигураций supervisor
 COPY supervisor/supervisord.conf /etc/supervisor/supervisord.conf
@@ -36,23 +39,16 @@ RUN sed -i \
     -e 's/user = nobody/user = nginx/g' \
     -e 's/group = nobody/group = nginx/g' \
     -e 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php\/php81-fpm.sock/g' \
-    -e 's/;listen.mode = 0660/listen.mode = 0660/g' \
     /etc/php81/php-fpm.d/www.conf
 
 # Создание симлинка для обратной совместимости
 RUN ln -s /var/run/php/php81-fpm.sock /var/run/php/php7.4-fpm.sock
-
-# Настройка прав
-RUN chown -R nginx:nginx /var/www/html /var/run/php /var/log/supervisor && \
-    chmod -R 755 /var/www/html && \
-    chmod -R 775 /var/run/php && \
-    chown -R nginx:nginx /var/run/supervisor && \
-    chmod -R 775 /var/run/supervisor
 
 # Создание health endpoint
 RUN echo "OK" > /var/www/html/health
 
 EXPOSE 9443
 
-# Запуск через supervisor
+# Запуск через supervisor от пользователя nginx
+USER nginx
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
