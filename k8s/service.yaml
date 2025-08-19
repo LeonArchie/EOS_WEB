@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-niginx-service
+  name: web-nginx-service
 spec:
   selector:
     app: web-niginx
