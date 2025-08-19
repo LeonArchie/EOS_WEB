@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-niginx
+  labels:
+    app: web-niginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-niginx
+  template:
+    metadata:
+      labels:
+        app: web-niginx
+        version: "0.1"
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: web-niginx
+        image: "{{IMAGE_NAME}}"
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          tcpSocket:
+            port: 9443
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        readinessProbe:
+          tcpSocket:
+            port: 9443
+          initialDelaySeconds: 5
+          periodSeconds: 5
