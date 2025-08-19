@@ -10,15 +10,15 @@ RUN apk add --no-cache \
     supervisor \
     curl
 
-# Создание директорий с правильными правами
+# Создание необходимых директорий
 RUN mkdir -p \
     /var/www/html \
     /var/log/supervisor \
     /var/run/php \
-    /tmp && \
-    chown -R nginx:nginx /var/www/html /var/log/supervisor /tmp && \
+    /var/log/php81 && \
+    chown -R nginx:nginx /var/www/html /var/log/php81 && \
     chmod -R 755 /var/www/html && \
-    chmod 777 /tmp
+    chmod 755 /var/log/php81
 
 # Копирование конфигураций
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
@@ -39,16 +39,21 @@ RUN sed -i \
     -e 's/user = nobody/user = nginx/g' \
     -e 's/group = nobody/group = nginx/g' \
     -e 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php\/php81-fpm.sock/g' \
+    -e 's/;listen.mode = 0660/listen.mode = 0660/g' \
+    -e 's|error_log = /var/log/php81/error.log|error_log = /proc/self/fd/2|g' \
     /etc/php81/php-fpm.d/www.conf
 
 # Создание симлинка для обратной совместимости
 RUN ln -s /var/run/php/php81-fpm.sock /var/run/php/php7.4-fpm.sock
+
+# Настройка прав для кэш директорий NGINX
+RUN chown -R nginx:nginx /var/cache/nginx && \
+    chmod -R 755 /var/cache/nginx
 
 # Создание health endpoint
 RUN echo "OK" > /var/www/html/health
 
 EXPOSE 9443
 
-# Запуск через supervisor от пользователя nginx
-USER nginx
+# Запуск через supervisor от root
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
