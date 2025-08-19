@@ -19,7 +19,7 @@ RUN mkdir -p \
 
 # Копирование конфигураций
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/eos-dev.school59-ekb.ru.conf /etc/nginx/conf.d/default.conf
+COPY nginx/app-config.school59-ekb.ru.conf /etc/nginx/conf.d/default.conf
 
 # Копирование конфигураций supervisor
 COPY supervisor/supervisord.conf /etc/supervisor/supervisord.conf
