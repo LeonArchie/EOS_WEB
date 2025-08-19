@@ -1,39 +1,30 @@
-# Основной этап
 FROM nginx:1.23-alpine
 
-# Метаданные
-LABEL maintainer="your-email@example.com"
-LABEL version="1.0"
-LABEL description="EOS Application with Nginx and PHP-FPM"
-
-# Установка системных утилит
+# Установка необходимых пакетов
 RUN apk add --no-cache \
+    php81 \
     php81-fpm \
-    php81-json \
+    php81-mysqli \
     php81-mbstring \
     php81-session \
-    php81-pdo \
-    php81-pdo_mysql \
-    php81-tokenizer \
-    php81-xml \
-    php81-dom \
-    php81-curl \
     supervisor \
-    iputils \
-    net-tools \
     curl
 
-# Создание необходимых директорий
+# Создание директорий
 RUN mkdir -p \
     /var/www/html \
     /var/log/supervisor \
     /var/run/php \
-    /var/log/php-fpm
+    /var/run/supervisor
 
 # Копирование конфигураций
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/app-config.school59-ekb.ru.conf /etc/nginx/conf.d/default.conf
-COPY supervisor/ /etc/supervisor/
+COPY nginx/eos-dev.school59-ekb.ru.conf /etc/nginx/conf.d/default.conf
+
+# Копирование конфигураций supervisor
+COPY supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY supervisor/nginx.conf /etc/supervisor/conf.d/nginx.conf
+COPY supervisor/php-fpm.conf /etc/supervisor/conf.d/php-fpm.conf
 
 # Копирование веб-файлов
 COPY web/ /var/www/html/
@@ -52,35 +43,16 @@ RUN sed -i \
 RUN ln -s /var/run/php/php81-fpm.sock /var/run/php/php7.4-fpm.sock
 
 # Настройка прав
-RUN chown -R nginx:nginx /var/www/html /var/run/php /var/log/php-fpm && \
+RUN chown -R nginx:nginx /var/www/html /var/run/php /var/log/supervisor && \
     chmod -R 755 /var/www/html && \
-    chmod -R 775 /var/run/php /var/log/php-fpm
+    chmod -R 775 /var/run/php && \
+    chown -R nginx:nginx /var/run/supervisor && \
+    chmod -R 775 /var/run/supervisor
 
-# Создание healthcheck скрипта
-RUN echo '#!/bin/sh\n\
-# Check nginx\n\
-if ! curl -f http://localhost:9443/health > /dev/null 2>&1; then\n\
-    echo "Nginx health check failed"\n\
-    exit 1\n\
-fi\n\
-# Check PHP-FPM\n\
-if ! SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET \\n\
-    cgi-fcgi -bind -connect /var/run/php/php81-fpm.sock 2>/dev/null | grep -q "pong"; then\n\
-    echo "PHP-FPM health check failed"\n\
-    exit 1\n\
-fi\n\
-exit 0' > /healthcheck.sh && \
-    chmod +x /healthcheck.sh
-
-# Создание простой healthcheck страницы
+# Создание health endpoint
 RUN echo "OK" > /var/www/html/health
 
-# Открытие портов
 EXPOSE 9443
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD /healthcheck.sh
 
 # Запуск через supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
